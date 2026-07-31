@@ -18,3 +18,32 @@ input:focus {
 button:hover {
   opacity: 0.9;
 }
+/* ---------------------------------------------------------------
+   Reusable "interactive hover" effect - add className="hover-lift"
+   to any clickable element (nav items, cards, bed cells, buttons)
+   across any dashboard to get a consistent scale + highlight effect
+   on mouse hover, matching the Login page role selector.
+   --------------------------------------------------------------- */
+.hover-lift {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.hover-lift:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 18px rgba(34, 211, 174, 0.25);
+  border-color: #22D3AE !important;
+}
+
+/* Slightly gentler version for large list items (appointment/patient
+   cards) where a big scale looks jumpy - use className="hover-lift-soft" */
+.hover-lift-soft {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.hover-lift-soft:hover {
+  transform: scale(1.015);
+  box-shadow: 0 4px 14px rgba(34, 211, 174, 0.18);
+  border-color: #22D3AE !important;
+}

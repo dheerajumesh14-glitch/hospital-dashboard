@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { C } from '../theme';
+import FilterDropdown from '../components/FilterDropdown';
 
 const MEDICATIONS = [
   { id:1, patient:'Priya Sharma',  bed:4,  medicine:'Saline IV 500ml',    qty:2,  status:'urgent',  time:'08:00' },
@@ -25,8 +27,29 @@ export default function PharmacistDashboard() {
   const navigate = useNavigate();
   const [active, setActive] = React.useState('orders');
   const [dispensed, setDispensed] = React.useState([]);
+  const [ordersFilter, setOrdersFilter] = React.useState('all');
+  const [inventoryFilter, setInventoryFilter] = React.useState('all');
   const handleLogout = () => { logout(); navigate('/login'); };
   const dispense = (id) => setDispensed(prev => [...prev, id]);
+
+  const effectiveStatus = (m) => (m.status === 'done' || dispensed.includes(m.id)) ? 'done' : m.status;
+  const filteredMedications = ordersFilter === 'all'
+    ? MEDICATIONS
+    : MEDICATIONS.filter(m => effectiveStatus(m) === ordersFilter);
+  const ordersFilterOptions = [
+    { value: 'all', label: 'All Orders', count: MEDICATIONS.length },
+    { value: 'urgent', label: 'Urgent', count: MEDICATIONS.filter(m => effectiveStatus(m) === 'urgent').length },
+    { value: 'pending', label: 'Pending', count: MEDICATIONS.filter(m => effectiveStatus(m) === 'pending').length },
+    { value: 'done', label: 'Done', count: MEDICATIONS.filter(m => effectiveStatus(m) === 'done').length },
+  ];
+
+  const filteredInventory = inventoryFilter === 'all' ? INVENTORY : INVENTORY.filter(i => i.level === inventoryFilter);
+  const inventoryFilterOptions = [
+    { value: 'all', label: 'All Stock', count: INVENTORY.length },
+    { value: 'ok', label: 'OK', count: INVENTORY.filter(i => i.level === 'ok').length },
+    { value: 'low', label: 'Low', count: INVENTORY.filter(i => i.level === 'low').length },
+    { value: 'critical', label: 'Critical', count: INVENTORY.filter(i => i.level === 'critical').length },
+  ];
 
   return (
     <div style={s.app}>
@@ -36,7 +59,7 @@ export default function PharmacistDashboard() {
           <div style={s.sbLogoText}>MediTrack HMS</div>
           <div style={s.sbLogoSub}>Pharmacy</div>
           <div style={s.userPill}>
-            <div style={{...s.avatar,background:'#E1F5EE',color:'#0F6E56'}}>
+            <div style={{...s.avatar,background:C.accentBg,color:C.accent}}>
               {user?.name?.split(' ').map(n=>n[0]).join('').slice(0,2)}
             </div>
             <div>
@@ -51,14 +74,14 @@ export default function PharmacistDashboard() {
             {key:'inventory', label:'Inventory',         icon:'🏪'},
             {key:'dispensed', label:'Dispensed Log',     icon:'✅'},
           ].map(n=>(
-            <div key={n.key} onClick={()=>setActive(n.key)}
-              style={{...s.navItem,background:active===n.key?'#E1F5EE':'transparent',color:active===n.key?'#0F6E56':'#555'}}>
+            <div key={n.key} onClick={()=>setActive(n.key)} className="hover-lift"
+              style={{...s.navItem,background:active===n.key?C.accentBg:'transparent',color:active===n.key?C.accent:C.textDim}}>
               <span>{n.icon}</span><span>{n.label}</span>
             </div>
           ))}
         </div>
         <div style={s.sbFooter}>
-          <div style={s.logoutBtn} onClick={handleLogout}>🚪 Sign out</div>
+          <div style={s.logoutBtn} className="hover-lift" onClick={handleLogout}>🚪 Sign out</div>
         </div>
       </div>
 
@@ -68,7 +91,7 @@ export default function PharmacistDashboard() {
             <div style={s.tbTitle}>💊 Pharmacist Dashboard</div>
             <div style={s.tbSub}>Sunday, 24 May 2026 · Morning shift</div>
           </div>
-          <span style={{...s.tbBadge,background:'#E1F5EE',color:'#0F6E56',border:'0.5px solid #9FE1CB'}}>
+          <span style={{...s.tbBadge,background:C.accentBg,color:C.accent,border:`0.5px solid ${C.accentBg}`}}>
             {MEDICATIONS.filter(m=>m.status!=='done'&&!dispensed.includes(m.id)).length} orders pending
           </span>
         </div>
@@ -79,18 +102,21 @@ export default function PharmacistDashboard() {
             <div>
               <div style={s.statGrid}>
                 <div style={s.stat}><div style={s.statLbl}>Total Orders</div><div style={s.statVal}>{MEDICATIONS.length}</div></div>
-                <div style={s.stat}><div style={s.statLbl}>Urgent</div><div style={{...s.statVal,color:'#E24B4A'}}>{MEDICATIONS.filter(m=>m.status==='urgent').length}</div></div>
-                <div style={s.stat}><div style={s.statLbl}>Pending</div><div style={{...s.statVal,color:'#BA7517'}}>{MEDICATIONS.filter(m=>m.status==='pending').length}</div></div>
-                <div style={s.stat}><div style={s.statLbl}>Dispensed</div><div style={{...s.statVal,color:'#3B6D11'}}>{MEDICATIONS.filter(m=>m.status==='done').length + dispensed.length}</div></div>
+                <div style={s.stat}><div style={s.statLbl}>Urgent</div><div style={{...s.statVal,color:C.red}}>{MEDICATIONS.filter(m=>m.status==='urgent').length}</div></div>
+                <div style={s.stat}><div style={s.statLbl}>Pending</div><div style={{...s.statVal,color:C.amber}}>{MEDICATIONS.filter(m=>m.status==='pending').length}</div></div>
+                <div style={s.stat}><div style={s.statLbl}>Dispensed</div><div style={{...s.statVal,color:C.greenBright}}>{MEDICATIONS.filter(m=>m.status==='done').length + dispensed.length}</div></div>
               </div>
-              <div style={s.secTitle}>Medication Orders</div>
-              {MEDICATIONS.map(m=>{
+              <div style={s.secHead}>
+                <span style={s.secTitle}>Medication Orders</span>
+                <FilterDropdown value={ordersFilter} options={ordersFilterOptions} onChange={setOrdersFilter} />
+              </div>
+              {filteredMedications.length === 0 && <div style={s.emptyBox}>No orders match this filter.</div>}
+              {filteredMedications.map(m=>{
                 const isDone = m.status==='done' || dispensed.includes(m.id);
+                const stripe = m.status==='urgent'&&!isDone ? C.red : m.status==='pending'&&!isDone ? C.amber : C.greenBright;
                 return (
-                  <div key={m.id} style={{...s.card,
-                    borderLeft: m.status==='urgent'&&!isDone ? '4px solid #E24B4A' :
-                                m.status==='pending'&&!isDone ? '4px solid #BA7517' :
-                                '4px solid #3B6D11',
+                  <div key={m.id} className="hover-lift-soft" style={{...s.card,
+                    borderLeft: `4px solid ${stripe}`,
                     opacity: isDone ? 0.6 : 1
                   }}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
@@ -99,11 +125,11 @@ export default function PharmacistDashboard() {
                         <div style={s.cardSub}>{m.patient} · Bed {m.bed} · Qty: {m.qty} · Time: {m.time}</div>
                       </div>
                       {!isDone ? (
-                        <button style={s.dispenseBtn} onClick={()=>dispense(m.id)}>
+                        <button style={s.dispenseBtn} className="hover-lift" onClick={()=>dispense(m.id)}>
                           Dispense
                         </button>
                       ) : (
-                        <span style={{...s.badge,background:'#EAF3DE',color:'#3B6D11'}}>✅ Done</span>
+                        <span style={{...s.badge,background:C.green,color:'#fff'}}>✅ Done</span>
                       )}
                     </div>
                   </div>
@@ -114,33 +140,37 @@ export default function PharmacistDashboard() {
 
           {active==='inventory' && (
             <div>
-              <div style={s.secTitle}>Drug Inventory</div>
-              {INVENTORY.map((item,i)=>(
-                <div key={i} style={{...s.card,
-                  borderLeft: item.level==='critical'?'4px solid #E24B4A':
-                              item.level==='low'?'4px solid #BA7517':
-                              '4px solid #3B6D11'}}>
+              <div style={s.secHead}>
+                <span style={s.secTitle}>Drug Inventory</span>
+                <FilterDropdown value={inventoryFilter} options={inventoryFilterOptions} onChange={setInventoryFilter} />
+              </div>
+              {filteredInventory.length === 0 && <div style={s.emptyBox}>No inventory items match this filter.</div>}
+              {filteredInventory.map((item,i)=>{
+                const stripe = item.level==='critical'?C.red: item.level==='low'?C.amber : C.greenBright;
+                return (
+                <div key={i} className="hover-lift-soft" style={{...s.card, borderLeft: `4px solid ${stripe}`}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <div>
                       <div style={s.cardTitle}>{item.name}</div>
                       <div style={s.cardSub}>{item.stock} {item.unit} remaining</div>
                     </div>
                     <span style={{...s.badge,
-                      background: item.level==='critical'?'#FCEBEB':item.level==='low'?'#FAEEDA':'#EAF3DE',
-                      color: item.level==='critical'?'#A32D2D':item.level==='low'?'#854F0B':'#3B6D11'}}>
+                      background: item.level==='critical'?C.red:item.level==='low'?C.amber:C.green,
+                      color: item.level==='low' ? '#14201a' : '#fff'}}>
                       {item.level}
                     </span>
                   </div>
-                  <div style={{marginTop:8,height:5,background:'#f0f0f0',borderRadius:3,overflow:'hidden'}}>
+                  <div style={{marginTop:8,height:5,background:C.border,borderRadius:3,overflow:'hidden'}}>
                     <div style={{
                       width:`${Math.min(item.stock*2,100)}%`,
                       height:'100%',
-                      background: item.level==='critical'?'#E24B4A':item.level==='low'?'#BA7517':'#3B6D11',
+                      background: stripe,
                       borderRadius:3
                     }}/>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -148,13 +178,13 @@ export default function PharmacistDashboard() {
             <div>
               <div style={s.secTitle}>Dispensed Today</div>
               {MEDICATIONS.filter(m=>m.status==='done'||dispensed.includes(m.id)).map(m=>(
-                <div key={m.id} style={s.card}>
+                <div key={m.id} className="hover-lift-soft" style={s.card}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <div>
                       <div style={s.cardTitle}>{m.medicine}</div>
                       <div style={s.cardSub}>{m.patient} · Bed {m.bed} · {m.time}</div>
                     </div>
-                    <span style={{...s.badge,background:'#EAF3DE',color:'#3B6D11'}}>✅ Dispensed</span>
+                    <span style={{...s.badge,background:C.green,color:'#fff'}}>✅ Dispensed</span>
                   </div>
                 </div>
               ))}
@@ -171,34 +201,35 @@ export default function PharmacistDashboard() {
 }
 
 const s = {
-  app:{display:'flex',height:'100vh',background:'#f5f6fa'},
-  sidebar:{width:220,background:'#fff',borderRight:'0.5px solid #e0e0e0',display:'flex',flexDirection:'column'},
-  sbHead:{padding:'1rem',borderBottom:'0.5px solid #e0e0e0'},
-  sbLogoText:{fontSize:14,fontWeight:600,color:'#1a1a2e'},
-  sbLogoSub:{fontSize:11,color:'#aaa',marginBottom:8},
-  userPill:{background:'#f5f6fa',borderRadius:8,padding:'8px 10px',display:'flex',alignItems:'center',gap:8},
+  app:{display:'flex',height:'100vh',background:C.bg,color:C.text,fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif'},
+  sidebar:{width:220,background:C.bgAlt,borderRight:`0.5px solid ${C.border}`,display:'flex',flexDirection:'column'},
+  sbHead:{padding:'1rem',borderBottom:`0.5px solid ${C.border}`},
+  sbLogoText:{fontSize:14,fontWeight:600,color:C.text},
+  sbLogoSub:{fontSize:11,color:C.textMute,marginBottom:8},
+  userPill:{background:C.card,borderRadius:8,padding:'8px 10px',display:'flex',alignItems:'center',gap:8},
   avatar:{width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:600,flexShrink:0},
-  uName:{fontSize:12,fontWeight:500,color:'#1a1a2e'},
-  uRole:{fontSize:10,color:'#aaa'},
+  uName:{fontSize:12,fontWeight:500,color:C.text},
+  uRole:{fontSize:10,color:C.textMute},
   sbNav:{padding:'0.5rem 0.75rem',flex:1},
   navItem:{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',borderRadius:8,cursor:'pointer',fontSize:13,marginBottom:2},
-  sbFooter:{padding:'0.75rem',borderTop:'0.5px solid #e0e0e0'},
-  logoutBtn:{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderRadius:8,cursor:'pointer',fontSize:13,color:'#555'},
+  sbFooter:{padding:'0.75rem',borderTop:`0.5px solid ${C.border}`},
+  logoutBtn:{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderRadius:8,cursor:'pointer',fontSize:13,color:C.textDim},
   main:{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'},
-  topbar:{background:'#fff',borderBottom:'0.5px solid #e0e0e0',padding:'0.75rem 1.25rem',display:'flex',alignItems:'center',justifyContent:'space-between'},
-  tbTitle:{fontSize:15,fontWeight:500,color:'#1a1a2e'},
-  tbSub:{fontSize:12,color:'#aaa',marginTop:2},
+  topbar:{background:C.bgAlt,borderBottom:`0.5px solid ${C.border}`,padding:'0.75rem 1.25rem',display:'flex',alignItems:'center',justifyContent:'space-between'},
+  tbTitle:{fontSize:15,fontWeight:500,color:C.text},
+  tbSub:{fontSize:12,color:C.textMute,marginTop:2},
   tbBadge:{fontSize:12,padding:'4px 10px',borderRadius:20},
-  content:{flex:1,overflowY:'auto',padding:'1rem 1.25rem'},
+  content:{flex:1,overflowY:'auto',padding:'1rem 1.25rem',background:C.bg},
   statGrid:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:'1rem'},
-  stat:{background:'#fff',border:'0.5px solid #e0e0e0',borderRadius:10,padding:'0.75rem 1rem'},
-  statLbl:{fontSize:11,color:'#aaa',marginBottom:3},
-  statVal:{fontSize:22,fontWeight:500,color:'#1a1a2e',lineHeight:1},
-  secTitle:{fontSize:11,fontWeight:600,color:'#aaa',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10},
-  card:{background:'#fff',border:'0.5px solid #e0e0e0',borderRadius:12,padding:'0.85rem 1rem',marginBottom:8},
-  cardTitle:{fontSize:13,fontWeight:500,color:'#1a1a2e'},
-  cardSub:{fontSize:11,color:'#aaa',marginTop:2},
-  badge:{fontSize:10,padding:'2px 8px',borderRadius:10,fontWeight:500},
-  dispenseBtn:{fontSize:12,padding:'5px 14px',borderRadius:8,border:'none',background:'#0F6E56',color:'#fff',cursor:'pointer'},
-  emptyBox:{background:'#fff',border:'0.5px solid #e0e0e0',borderRadius:12,padding:'3rem',textAlign:'center',fontSize:14,color:'#888'},
+  stat:{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:10,padding:'0.75rem 1rem'},
+  statLbl:{fontSize:11,color:C.textMute,marginBottom:3},
+  statVal:{fontSize:22,fontWeight:500,color:C.text,lineHeight:1},
+  secTitle:{fontSize:11,fontWeight:600,color:C.textMute,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10},
+  secHead:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10},
+  card:{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:12,padding:'0.85rem 1rem',marginBottom:8},
+  cardTitle:{fontSize:13,fontWeight:500,color:C.text},
+  cardSub:{fontSize:11,color:C.textMute,marginTop:2},
+  badge:{fontSize:10,padding:'2px 8px',borderRadius:10,fontWeight:600},
+  dispenseBtn:{fontSize:12,padding:'5px 14px',borderRadius:8,border:'none',background:C.accent,color:'#0A2224',fontWeight:600,cursor:'pointer'},
+  emptyBox:{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:12,padding:'3rem',textAlign:'center',fontSize:14,color:C.textMute},
 };
